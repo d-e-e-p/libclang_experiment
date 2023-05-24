@@ -49,7 +49,8 @@ jobs:
           -DLLVM_ENABLE_ZSTD=OFF \
           -DLLVM_TARGETS_TO_BUILD=AArch64
     - name: build
-      run: cd llvm-project-$LLVM_VER && \
+      run: |
+        cd llvm-project-$LLVM_VER && \
         cmake --build build --config RelWithDebInfo --target libclang -parallel $(sysctl -n hw.ncpu)
     - name: print dependencies
       run: |
