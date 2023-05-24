@@ -51,7 +51,7 @@ jobs:
     - name: build
       run: |
         cd llvm-project-$LLVM_VER && \
-        cmake --build build --config RelWithDebInfo --target libclang -parallel $(sysctl -n hw.ncpu)
+        cmake --build build --config RelWithDebInfo --target libclang --parallel `sysctl -n hw.ncpu`
     - name: print dependencies
       run: |
         strip -u llvm-project-$LLVM_VER/build/lib/libclang.dylib
