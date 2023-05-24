@@ -55,7 +55,7 @@ jobs:
           -DLLVM_ENABLE_WERROR=FALSE \
           -DLLVM_ENABLE_ZLIB=OFF \
           -DLLVM_ENABLE_ZSTD=OFF \
-          -DLLVM_NATIVE_TOOL_DIR=/opt/homebrew/Cellar/llvm/$LLVM_VER/bin \
+          -DLLVM_NATIVE_TOOL_DIR=/usr/local/opt/llvm/bin \
           -DLLVM_TARGETS_TO_BUILD=AArch64
     - name: build
       run: |
