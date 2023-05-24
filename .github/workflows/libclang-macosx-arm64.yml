@@ -64,6 +64,7 @@ jobs:
     - name: strip and print lib stats
       run: |
         cd llvm-project-$LLVM_VER/build/lib
+        /usr/local/opt/llvm/bin/clang -fpic -shared -Wl,-all_load libclang.a -o libclang.dylib
         strip -u libclang.dylib
         du -csh libclang.dylib
         file libclang.dylib
@@ -73,7 +74,6 @@ jobs:
     - name: create and print sha512sum
       run: |
         cd llvm-project-$LLVM_VER/build/lib
-        strip -u libclang.dylib
         shasum -a512 libclang.dylib > libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
         echo "Checksum is: "
         cat libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
