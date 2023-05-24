@@ -4,6 +4,8 @@ on: [push, pull_request]
 
 env:
   LLVM_VER: 16.0.4
+  LIBCLANG: native/libclang.dylib
+
 
 concurrency:
   group: ${{ github.repository }}-${{ github.head_ref || github.sha }}-${{ github.workflow }}
@@ -32,8 +34,9 @@ jobs:
         cat /dev/null > llvm-project-$LLVM_VER/llvm/cmake/modules/CheckAtomic.cmake
     - name: cmake
       run: |
-        cd llvm-project-$LLVM_VER && \
-        cmake -S llvm -B build \
+        uname -a
+        cd llvm-project-$LLVM_VER 
+        cmake -S llvm \
           -G "Unix Makefiles" -B build \
           -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_BUILD_TYPE=Release \
@@ -41,27 +44,31 @@ jobs:
           -DCMAKE_C_COMPILER=`which clang` \
           -DCMAKE_INSTALL_PREFIX=$HOME/.local \
           -DCMAKE_OSX_ARCHITECTURES=arm64 \
+          -DDEFAULT_SYSROOT="$(xcrun --show-sdk-path)" \
           -DLLVM_DEFAULT_TARGET_TRIPLE=16.0.4-arm64-apple-darwin22.4 \
           -DLLVM_ENABLE_PROJECTS=clang \
           -DLLVM_ENABLE_TERMINFO=OFF \
           -DLLVM_ENABLE_WERROR=FALSE \
           -DLLVM_ENABLE_ZLIB=OFF \
           -DLLVM_ENABLE_ZSTD=OFF \
-          -DLLVM_TARGETS_TO_BUILD=AArch64
+          -DLLVM_TARGETS_TO_BUILD=arm64
     - name: build
       run: |
-        cd llvm-project-$LLVM_VER && \
-        cmake --build build --config RelWithDebInfo --target libclang --parallel 4
-    - name: print dependencies
+        cd llvm-project-$LLVM_VER 
+        cmake --build build --config RelWithDebInfo --target libclang --parallel $(sysctl -n hw.ncpu)
+    - name: strip and print lib stats
       run: |
-        strip -u llvm-project-$LLVM_VER/build/lib/libclang.dylib
-        du -csh llvm-project-$LLVM_VER/build/lib/libclang.dylib
-        file llvm-project-$LLVM_VER/build/lib/libclang.dylib
-        otool -L llvm-project-$LLVM_VER/build/lib/libclang.dylib
-        dyld_info -platform -dependents llvm-project-$LLVM_VER/build/lib/libclang.dylib 
+        cd llvm-project-$LLVM_VER/build/lib
+        strip -u libclang.dylib
+        du -csh libclang.dylib
+        file libclang.dylib
+        otool -L libclang.dylib
+        dyld_info -platform -dependents libclang.dylib 
+        lipo -info libclang.dylib
     - name: create and print sha512sum
       run: |
         cd llvm-project-$LLVM_VER/build/lib
+        strip -u libclang.dylib
         shasum -a512 libclang.dylib > libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
         echo "Checksum is: "
         cat libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
