@@ -26,6 +26,7 @@ jobs:
     - name: install gnu-tar
       run: |
         brew install gnu-tar
+        brew install llvm  # assume $LLVM_VER
     - name: get llvm-project
       run: |
         wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VER/llvm-project-$LLVM_VER.src.tar.xz
@@ -33,6 +34,7 @@ jobs:
         mv llvm-project-$LLVM_VER.src llvm-project-$LLVM_VER
         cat /dev/null > llvm-project-$LLVM_VER/llvm/cmake/modules/CheckAtomic.cmake
     - name: cmake
+      # see https://llvm.org/docs/HowToCrossCompileLLVM.html
       run: |
         uname -a
         cd llvm-project-$LLVM_VER 
@@ -44,14 +46,17 @@ jobs:
           -DCMAKE_C_COMPILER=`which clang` \
           -DCMAKE_INSTALL_PREFIX=$HOME/.local \
           -DCMAKE_OSX_ARCHITECTURES=arm64 \
+          -DCMAKE_SYSTEM_NAME=Darwin \
           -DDEFAULT_SYSROOT="$(xcrun --show-sdk-path)" \
           -DLLVM_DEFAULT_TARGET_TRIPLE=16.0.4-arm64-apple-darwin22.4 \
+          -DLLVM_ENABLE_PIC=False \
           -DLLVM_ENABLE_PROJECTS=clang \
           -DLLVM_ENABLE_TERMINFO=OFF \
           -DLLVM_ENABLE_WERROR=FALSE \
           -DLLVM_ENABLE_ZLIB=OFF \
           -DLLVM_ENABLE_ZSTD=OFF \
-          -DLLVM_TARGETS_TO_BUILD=arm64
+          -DLLVM_NATIVE_TOOL_DIR=/opt/homebrew/Cellar/llvm/$LLVM_VER/bin \
+          -DLLVM_TARGETS_TO_BUILD=AArch64
     - name: build
       run: |
         cd llvm-project-$LLVM_VER 
