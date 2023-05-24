@@ -28,8 +28,8 @@ jobs:
       run: |
         wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VER/llvm-project-$LLVM_VER.src.tar.xz
         tar xf llvm-project-$LLVM_VER.src.tar.xz
-        mv llvm-$LLVM_VER.src llvm-project-$LLVM_VER
-        cat /dev/null > ./llvm/cmake/modules/CheckAtomic.cmake
+        mv llvm-project-$LLVM_VER.src llvm-project-$LLVM_VER
+        cat /dev/null > llvm-project-$LLVM_VER/llvm/cmake/modules/CheckAtomic.cmake
     - name: cmake
       run: |
         cd llvm-project-$LLVM_VER && \
