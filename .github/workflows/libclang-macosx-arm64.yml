@@ -40,7 +40,7 @@ jobs:
         cd llvm-project-$LLVM_VER 
         cmake -S llvm \
           -G "Unix Makefiles" -B build \
-          -DBUILD_SHARED_LIBS=OFF \
+          -DBUILD_SHARED_LIBS=ON \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=`which clang++` \
           -DCMAKE_C_COMPILER=`which clang` \
@@ -60,11 +60,10 @@ jobs:
     - name: build
       run: |
         cd llvm-project-$LLVM_VER 
-        cmake --build build --config RelWithDebInfo --target libclang --parallel $(sysctl -n hw.ncpu)
+        cmake --build build --config Release --target libclang --parallel $(sysctl -n hw.ncpu)
     - name: strip and print lib stats
       run: |
         cd llvm-project-$LLVM_VER/build/lib
-        /usr/local/opt/llvm/bin/clang -fpic -shared -Wl,-all_load libclang.a -o libclang.dylib
         strip -u libclang.dylib
         du -csh libclang.dylib
         file libclang.dylib
@@ -77,7 +76,7 @@ jobs:
         shasum -a512 libclang.dylib > libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
         echo "Checksum is: "
         cat libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
-        gtar zcvf libclang.dylib.$LLVM_VER.macosx-arm64.tar.gz libclang.dylib libclang.dylib.$LLVM_VER.macosx-amd64.sha512sum
+        gtar zcvf libclang.dylib.$LLVM_VER.macosx-arm64.tar.gz libclang.dylib libclang.dylib.$LLVM_VER.macosx-arm64.sha512sum
         shasum -a512 libclang.dylib.$LLVM_VER.macosx-arm64.tar.gz
     - uses: actions/upload-artifact@v3
       with:
