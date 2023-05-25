@@ -23,16 +23,16 @@ jobs:
     - name: install wheel dependencies
       run: |
         pip3 install wheel
-    - name: install gnu-tar
+    - name: install gnu-tar and llvm
       run: |
         brew install gnu-tar
-        brew install llvm  # assume $LLVM_VER
+        brew install llvm  # assume install under /usr/local/opt/llvm
     - name: get llvm-project
       run: |
         wget -q https://github.com/llvm/llvm-project/releases/download/llvmorg-$LLVM_VER/llvm-project-$LLVM_VER.src.tar.xz
         tar xf llvm-project-$LLVM_VER.src.tar.xz
         mv llvm-project-$LLVM_VER.src llvm-project-$LLVM_VER
-        cat /dev/null > llvm-project-$LLVM_VER/llvm/cmake/modules/CheckAtomic.cmake
+        # cat /dev/null > llvm-project-$LLVM_VER/llvm/cmake/modules/CheckAtomic.cmake
     - name: cmake
       # see https://llvm.org/docs/HowToCrossCompileLLVM.html
       run: |
@@ -47,7 +47,6 @@ jobs:
           -DCMAKE_INSTALL_PREFIX=$HOME/.local \
           -DCMAKE_OSX_ARCHITECTURES=arm64 \
           -DCMAKE_SYSTEM_NAME=Darwin \
-          -DCMAKE_SHARED_LINKER_FLAGS=" -Wl,-single_module -undefined dynamic_lookup " \
           -DDEFAULT_SYSROOT="$(xcrun --show-sdk-path)" \
           -DLLVM_DEFAULT_TARGET_TRIPLE=16.0.4-arm64-apple-darwin22.4 \
           -DLLVM_ENABLE_PIC=False \
@@ -65,12 +64,14 @@ jobs:
     - name: strip and print lib stats
       run: |
         cd llvm-project-$LLVM_VER/build/lib
+        mv libclang.dylib temp.dylib
+        lipo -create temp.dylib -output libclang.dylib
+        lipo -info libclang.dylib
         strip -u libclang.dylib
         du -csh libclang.dylib
         file libclang.dylib
         otool -L libclang.dylib
         dyld_info -platform -dependents libclang.dylib 
-        lipo -info libclang.dylib
     - name: create and print sha512sum
       run: |
         cd llvm-project-$LLVM_VER/build/lib
