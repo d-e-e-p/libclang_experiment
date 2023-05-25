@@ -40,7 +40,7 @@ jobs:
         cd llvm-project-$LLVM_VER 
         cmake -S llvm \
           -G "Unix Makefiles" -B build \
-          -DBUILD_SHARED_LIBS=ON \
+          -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=`which clang++` \
           -DCMAKE_C_COMPILER=`which clang` \
@@ -64,8 +64,7 @@ jobs:
     - name: strip and print lib stats
       run: |
         cd llvm-project-$LLVM_VER/build/lib
-        mv libclang.dylib temp.dylib
-        lipo -create temp.dylib -output libclang.dylib
+        /usr/local/opt/llvm/bin/clang -fpic -shared -Wl,-all_load -arch arm64 libclang.a -o libclang.dylib
         lipo -info libclang.dylib
         strip -u libclang.dylib
         du -csh libclang.dylib
