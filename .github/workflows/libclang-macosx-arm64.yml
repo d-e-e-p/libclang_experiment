@@ -64,7 +64,7 @@ jobs:
     - name: combine .a archives into dylib
       run: |
         cd llvm-project-$LLVM_VER/build/lib
-        /usr/local/opt/llvm/bin/clang -arch arm64 -fpic -shared  -lstdc++ -Wl,-force_load *.a -o libclang.dylib
+        /usr/local/opt/llvm/bin/clang -arch arm64 -fpic -shared  -lstdc++ -Wl,-force_load libclang.a *.a -o libclang.dylib
         strip -u libclang.dylib
         lipo -info libclang.dylib
         du -csh libclang.dylib
