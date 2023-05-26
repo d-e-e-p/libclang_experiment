@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 env:
   LLVM_VER: 16.0.4
-  LIBCLANG: native/libclang.dylib
 
 
 concurrency:
@@ -42,13 +41,13 @@ jobs:
           -G "Unix Makefiles" -B build \
           -DBUILD_SHARED_LIBS=OFF \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_CXX_COMPILER=`which clang++` \
-          -DCMAKE_C_COMPILER=`which clang` \
+          -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ \
+          -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang \
           -DCMAKE_INSTALL_PREFIX=$HOME/.local \
           -DCMAKE_OSX_ARCHITECTURES=arm64 \
           -DCMAKE_SYSTEM_NAME=Darwin \
           -DDEFAULT_SYSROOT="$(xcrun --show-sdk-path)" \
-          -DLLVM_DEFAULT_TARGET_TRIPLE=16.0.4-arm64-apple-darwin22.4 \
+          -DLLVM_DEFAULT_TARGET_TRIPLE=16.0.4-arm64-apple-darwin21.6 \
           -DLLVM_ENABLE_PIC=False \
           -DLLVM_ENABLE_PROJECTS=clang \
           -DLLVM_ENABLE_TERMINFO=OFF \
@@ -56,17 +55,18 @@ jobs:
           -DLLVM_ENABLE_ZLIB=OFF \
           -DLLVM_ENABLE_ZSTD=OFF \
           -DLLVM_NATIVE_TOOL_DIR=/usr/local/opt/llvm/bin \
+          -DLLVM_USE_LINKER=lld \
           -DLLVM_TARGETS_TO_BUILD=AArch64
     - name: build
       run: |
         cd llvm-project-$LLVM_VER 
         cmake --build build --config Release --target libclang --parallel $(sysctl -n hw.ncpu)
-    - name: strip and print lib stats
+    - name: combine .a archives into dylib
       run: |
         cd llvm-project-$LLVM_VER/build/lib
-        /usr/local/opt/llvm/bin/clang -fpic -shared -Wl,-all_load -arch arm64 libclang.a -o libclang.dylib
-        lipo -info libclang.dylib
+        /usr/local/opt/llvm/bin/clang -arch arm64 -fpic -shared  -lstdc++ -Wl,-force_load *.a -o libclang.dylib
         strip -u libclang.dylib
+        lipo -info libclang.dylib
         du -csh libclang.dylib
         file libclang.dylib
         otool -L libclang.dylib
@@ -86,10 +86,10 @@ jobs:
     - name: generate wheel package
       run: |
         cp llvm-project-$LLVM_VER/build/lib/libclang.dylib native/
-        python3 setup_ext.py bdist_wheel --universal --plat-name=macosx_22.4_arm64
+        python3 setup_ext.py bdist_wheel --universal --plat-name=macosx_21.6_arm64
     - uses: actions/upload-artifact@v3
       with:
-        name: wheel-${{env.LLVM_VER}}-macosx_22.4_arm64
+        name: wheel-${{env.LLVM_VER}}-macosx_21.6_arm64
         path: dist/*.whl
 
   upload-to-pypi:
@@ -98,7 +98,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v3
       with:
-        name: wheel-${{env.LLVM_VER}}-macosx_22.4_arm64
+        name: wheel-${{env.LLVM_VER}}-macosx_21.6_arm64
         path: dist/
     - name: Publish to PyPI
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
